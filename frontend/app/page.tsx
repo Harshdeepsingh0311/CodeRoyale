@@ -5,7 +5,7 @@ import { motion, easeInOut } from "framer-motion";
 // import Link from 'next/link'
 import { useEffect, useState } from "react";
 import RoomModal from "@/components/RoomModal";
-// import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   // useGameStore();
@@ -15,9 +15,8 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // const router = useRouter();
+  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
   const [showRoom, setShowRoom] = useState(false);
 
   const containerVariants = {
@@ -253,12 +252,10 @@ export default function Home() {
             open={showRoom}
             onClose={() => setShowRoom(false)}
             onCreate={(roomId) => {
-              console.log("Create room:", roomId);
-              setShowRoom(false);
+              router.push(`/room/${roomId}`);
             }}
             onJoin={(roomId) => {
-              console.log("Join room:", roomId);
-              setShowRoom(false);
+              router.push(`/room/${roomId}`);
             }}
           />
 
