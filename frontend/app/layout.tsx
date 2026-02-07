@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "Code Royale",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://code-royale-dev.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Code Royale – Multiplayer Coding Battle",
