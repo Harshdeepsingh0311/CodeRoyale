@@ -1,43 +1,24 @@
 "use client";
 
 import { motion, easeInOut } from "framer-motion";
-import { useGameStore } from "@/store/gameStore";
+// import { useGameStore } from "@/store/gameStore";
 // import Link from 'next/link'
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import RoomModal from "@/components/RoomModal";
+// import { useRouter } from "next/navigation";
 
 export default function Home() {
-  useGameStore();
+  // useGameStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const router = useRouter();
-  const [showRoom, setShowRoom] = useState(false);
-  const [roomId, setRoomId] = useState("");
-  const [joinRoomId, setJoinRoomId] = useState("");
+  // const router = useRouter();
+
   const [loading, setLoading] = useState(false);
-
-  const generateRoomId = () => {
-    const id = Math.random().toString(36).substring(2, 9).toUpperCase();
-    setRoomId(id);
-    handleJoinRoom(id);
-  };
-
-  const handleJoinRoom = (id: string) => {
-    setLoading(true);
-    setTimeout(() => {
-      console.log(`Join Room ID: ${id}`);
-    }, 300);
-  };
-
-  const handlePasteAndJoin = () => {
-    if (joinRoomId.trim()) {
-      handleJoinRoom(joinRoomId.toUpperCase());
-    }
-  };
+  const [showRoom, setShowRoom] = useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -72,7 +53,7 @@ export default function Home() {
     "rgba(230, 197, 131, 0.15)", // accent
   ];
 
-  const getRandomColor = (i: number) => colorVariants[i % colorVariants.length];
+  // const getRandomColor = (i: number) => colorVariants[i % colorVariants.length];
 
   if (!mounted) return null;
 
@@ -181,7 +162,7 @@ export default function Home() {
           {/* Main Content Area - Flexible center */}
           <div className="flex-1 flex flex-col items-center justify-center">
             {/* CENTER: DOMINANT CTA or ROOM SECTION */}
-            {!showRoom ? (
+            {!showRoom && (
               <motion.div
                 className="flex flex-col items-center gap-6"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -236,100 +217,6 @@ export default function Home() {
                   ))}
                 </motion.div>
               </motion.div>
-            ) : (
-              <motion.div
-                className="flex flex-col items-center gap-6 w-full max-w-lg"
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                {/* Glow background */}
-                <div className="absolute w-72 h-72 md:w-96 md:h-96 rounded-full bg-primary/10 blur-3xl -z-10" />
-
-                {/* Room Header */}
-                <h2 className="font-pixel text-xl md:text-2xl text-white drop-shadow-lg">
-                  JOIN ROOM
-                </h2>
-
-                {/* Room Section Card */}
-                <div className="w-full bg-black/50 border-3 border-cyan-400/50 rounded-2xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
-                  {/* Generate Room Option */}
-                  <div className="space-y-3">
-                    <p className="font-pixel text-sm text-cyan-300">
-                      CREATE NEW
-                    </p>
-                    <motion.button
-                      onClick={generateRoomId}
-                      disabled={loading}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500/40 to-blue-500/40 text-white border-2 border-cyan-400 font-bold text-sm hover:from-cyan-500/60 hover:to-blue-500/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? "JOINING..." : "GENERATE & JOIN"}
-                    </motion.button>
-                    {roomId && (
-                      <div className="bg-cyan-500/20 border border-cyan-400/60 rounded-lg p-3 text-center">
-                        <p className="text-xs text-cyan-200">Room ID</p>
-                        <p className="font-pixel text-lg text-cyan-300 mt-1 font-bold">
-                          {roomId}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-cyan-400/30" />
-                    <span className="text-xs text-cyan-300 font-mono font-bold">
-                      OR
-                    </span>
-                    <div className="flex-1 h-px bg-cyan-400/30" />
-                  </div>
-
-                  {/* Paste Room ID Option */}
-                  <div className="space-y-3">
-                    <p className="font-pixel text-sm text-orange-300">
-                      JOIN EXISTING
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Paste room ID"
-                        value={joinRoomId}
-                        onChange={(e) => setJoinRoomId(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handlePasteAndJoin()
-                        }
-                        disabled={loading}
-                        className="flex-1 px-4 py-3 rounded-xl bg-white/10 border-2 border-orange-400/50 text-white placeholder-white/50 text-sm focus:outline-none focus:border-orange-400 transition-colors disabled:opacity-50 font-semibold"
-                      />
-                      <motion.button
-                        onClick={handlePasteAndJoin}
-                        disabled={loading || !joinRoomId.trim()}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500/40 to-red-500/40 text-white border-2 border-orange-400 font-bold text-sm hover:from-orange-500/60 hover:to-red-500/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? "..." : "JOIN"}
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  {/* Back Button */}
-                  <motion.button
-                    onClick={() => {
-                      setShowRoom(false);
-                      setJoinRoomId("");
-                      setRoomId("");
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full px-6 py-2 rounded-lg bg-white/10 text-white border-2 border-white/30 font-semibold text-xs hover:bg-white/20 transition-all"
-                  >
-                    BACK
-                  </motion.button>
-                </div>
-              </motion.div>
             )}
           </div>
 
@@ -361,6 +248,19 @@ export default function Home() {
               ))}
             </motion.div>
           )}
+
+          <RoomModal
+            open={showRoom}
+            onClose={() => setShowRoom(false)}
+            onCreate={(roomId) => {
+              console.log("Create room:", roomId);
+              setShowRoom(false);
+            }}
+            onJoin={(roomId) => {
+              console.log("Join room:", roomId);
+              setShowRoom(false);
+            }}
+          />
 
           {/* Footer text */}
           <motion.p
