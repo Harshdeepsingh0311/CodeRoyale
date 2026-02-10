@@ -1,18 +1,47 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const cors = require("cors");
 
 const app = express();
 
-app.use(cors());
+/* ------------------ Middleware ------------------ */
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  })
+);
 app.use(express.json());
 
+/* ------------------ Basic Route ------------------ */
 app.get("/", (req, res) => {
-  res.status(200).send("Code Royale Backend is running 🚀");
+  res.send("Code Royale Backend Running 🚀");
 });
 
-const PORT = 8080;
-const HOST = "0.0.0.0";
+/* ------------------ HTTP + Socket Server ------------------ */
+const server = http.createServer(app);
 
-app.listen(PORT, HOST, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+/* ------------------ Socket Events ------------------ */
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+  console.log("Client headers:", socket.handshake.headers.origin);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
+  });
+});
+
+/* ------------------ Start Server ------------------ */
+const PORT = 5001;
+
+server.listen(PORT, () => {
+  console.log(`✅ Backend listening on http://localhost:${PORT}`);
 });
