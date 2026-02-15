@@ -1,12 +1,16 @@
 const rooms = new Map();
 
-function createRoom(roomId, hostSocketId, playerName) {
+function generateRoomId() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+function createRoom(hostSocketId, playerName) {
+  const roomId = generateRoomId();
+
   const room = {
     roomId,
     hostId: hostSocketId,
-    players: [
-      { id: hostSocketId, name: playerName }
-    ],
+    players: [{ id: hostSocketId, name: playerName }],
   };
 
   rooms.set(roomId, room);

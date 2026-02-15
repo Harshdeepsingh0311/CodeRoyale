@@ -1,7 +1,7 @@
 const { getRoom } = require("../rooms");
 
 function handleJoinRoom(socket, io) {
-  return ({ roomId, playerName }) => {
+  return ({ roomId, playerId }) => {
     const room = getRoom(roomId);
 
     if (!room) {
@@ -9,28 +9,21 @@ function handleJoinRoom(socket, io) {
       return;
     }
 
-    if (room.players.some((p) => p.name === playerName)) {
+    if (room.players.some((p) => p.name === playerId)) {
       socket.emit("error_message", "Name already taken");
       return;
     }
 
     room.players.push({
       id: socket.id,
-      name: playerName,
+      name: playerId,
     });
 
     socket.join(roomId);
 
-    io.to(roomId).emit("room_update", {
-      type: "ROOM_UPDATE",
-      room: {
-        roomId: room.roomId,
-        hostId: room.hostId,
-        players: [...room.players],
-      },
-    });
+    console.log("👤 Joined:", playerId, "→", roomId);
 
-    console.log("UPDATED ROOM:", room);
+    io.to(roomId).emit("room_update", room);
   };
 }
 

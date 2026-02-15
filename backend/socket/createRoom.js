@@ -1,23 +1,14 @@
 const { createRoom } = require("../rooms");
 
-function handleCreateRoom(socket, io, generateRoomId) {
-  return ({ playerName }) => {
-    const roomId = generateRoomId();
+function handleCreateRoom(socket, io) {
+  return ({ playerId }) => {
+    const room = createRoom(socket.id, playerId);
 
-    const room = createRoom(roomId, socket.id, playerName);
+    socket.join(room.roomId);
 
-    socket.join(roomId);
+    console.log("🏠 Room created:", room.roomId);
 
-    io.to(roomId).emit("room_update", {
-      type: "ROOM_UPDATE",
-      room: {
-        roomId: room.roomId,
-        hostId: room.hostId,
-        players: [...room.players],
-      },
-    });
-
-    console.log("ROOM SENT TO CLIENT:", room);
+    io.to(room.roomId).emit("room_update", room);
   };
 }
 
