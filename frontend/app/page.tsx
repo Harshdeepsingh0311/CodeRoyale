@@ -5,7 +5,7 @@ import { motion, easeInOut } from "framer-motion";
 // import Link from 'next/link'
 import { useEffect, useState } from "react";
 import RoomModal from "@/components/RoomModal";
-import { useRouter } from "next/navigation";
+import "@/lib/socket";
 
 export default function Home() {
   // useGameStore();
@@ -14,8 +14,6 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const router = useRouter();
 
   const [showRoom, setShowRoom] = useState(false);
 
@@ -248,16 +246,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          <RoomModal
-            open={showRoom}
-            onClose={() => setShowRoom(false)}
-            onCreate={(roomId) => {
-              router.push(`/room/${roomId}`);
-            }}
-            onJoin={(roomId) => {
-              router.push(`/room/${roomId}`);
-            }}
-          />
+          <RoomModal open={showRoom} onClose={() => setShowRoom(false)} />
 
           {/* Footer text */}
           <motion.p

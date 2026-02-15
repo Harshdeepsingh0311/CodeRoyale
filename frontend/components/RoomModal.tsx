@@ -2,74 +2,122 @@
 
 import { motion, AnimatePresence, easeInOut } from "framer-motion";
 import { useEffect, useState } from "react";
+import { socket } from "@/lib/socket";
+import { useRouter } from "next/navigation";
+import { useRoomStore } from "@/store/roomStore";
 
 type RoomModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreate: (roomId: string) => void;
-  onJoin: (roomId: string) => void;
 };
 
-export default function RoomModal({
-  open,
-  onClose,
-  onCreate,
-  onJoin,
-}: RoomModalProps) {
-  const [roomId, setRoomId] = useState("");
+export default function RoomModal({ open, onClose }: RoomModalProps) {
+  const router = useRouter();
+  const { roomId } = useRoomStore();
+
   const [joinRoomId, setJoinRoomId] = useState("");
+  const [playerName, setPlayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Reset state when modal opens
+  useEffect(() => {
+    if (!roomId) return;
+
+    setLoading(false);
+    onClose();
+    router.push(`/room/${roomId}`);
+  }, [roomId]);
+
+  /* ------------------ Load Saved Name ------------------ */
+  useEffect(() => {
+    const saved = localStorage.getItem("playerName");
+    if (saved) setPlayerName(saved);
+  }, []);
+
+  /* ------------------ Redirect When Room Created ------------------ */
+  // useEffect(() => {
+  //   if (!roomId) return;
+
+  //   setLoading(false);
+  //   router.push(`/room/${roomId}`);
+  // }, [roomId, router]);
+
+  /* ------------------ Reset Modal When Opened ------------------ */
   useEffect(() => {
     if (open) {
-      setRoomId("");
       setJoinRoomId("");
       setError("");
       setLoading(false);
     }
   }, [open]);
 
-  const generateRoomId = () => {
-    const id = Math.random().toString(36).substring(2, 9).toUpperCase();
-    setRoomId(id);
-    handleJoin(id);
+  /* ------------------ Name Validation ------------------ */
+  const isValidName = (name: string) => {
+    return /^[A-Za-z0-9_]{3,12}$/.test(name);
   };
 
-  const handleJoin = (id: string) => {
-    if (id.length < 4) {
-      setError("Invalid Room ID");
+  /* ------------------ CREATE ROOM ------------------ */
+  const handleCreateRoom = () => {
+    if (!isValidName(playerName)) {
+      setError("Name must be 3–12 characters, one word only");
       return;
     }
 
+    localStorage.setItem("playerName", playerName);
+
     setLoading(true);
-    setTimeout(() => {
-      onJoin(id);
-      setLoading(false);
-    }, 300);
+    setError("");
+
+    socket.emit("create_room", {
+      playerId: playerName,
+    });
   };
 
-  const handlePasteAndJoin = () => {
-    if (!joinRoomId.trim()) {
+  /* ------------------ JOIN ROOM ------------------ */
+  const handleJoinRoom = () => {
+    const formattedRoomId = joinRoomId.trim().toUpperCase();
+
+    if (!isValidName(playerName)) {
+      setError("Name must be 3–12 characters, one word only");
+      return;
+    }
+
+    if (!formattedRoomId) {
       setError("Room ID cannot be empty");
       return;
     }
-    handleJoin(joinRoomId.toUpperCase());
+
+    if (!/^[A-Z0-9]{4,8}$/.test(formattedRoomId)) {
+      setError("Invalid Room ID format");
+      return;
+    }
+
+    localStorage.setItem("playerName", playerName);
+
+    setLoading(true);
+    setError("");
+
+    socket.emit("join_room", {
+      roomId: formattedRoomId,
+      playerId: playerName,
+    });
+
+    // Navigate immediately — state will sync via room_update
+    router.push(`/room/${formattedRoomId}`);
   };
 
-  // Keyboard support
+  /* ------------------ Keyboard Support ------------------ */
   useEffect(() => {
     if (!open) return;
 
-    const handler = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "Enter") handlePasteAndJoin();
+      if (e.key === "Enter") handleJoinRoom();
     };
 
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, joinRoomId]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, joinRoomId, playerName]);
 
   return (
     <AnimatePresence>
@@ -81,7 +129,7 @@ export default function RoomModal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-full max-w-lg bg-black/50 border-3 border-cyan-400/50 rounded-2xl p-6 md:p-8 space-y-6 backdrop-blur-sm"
+            className="w-full max-w-lg bg-black/50 border-2 border-cyan-400/50 rounded-2xl p-6 md:p-8 space-y-6 backdrop-blur-sm"
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.85, opacity: 0 }}
@@ -91,27 +139,33 @@ export default function RoomModal({
               JOIN ROOM
             </h2>
 
-            {/* CREATE */}
+            {/* PLAYER NAME */}
+            <div className="space-y-2">
+              <p className="font-pixel text-sm text-white">YOUR NAME</p>
+              <input
+                value={playerName}
+                onChange={(e) => {
+                  setPlayerName(e.target.value);
+                  setError("");
+                }}
+                placeholder="Enter one-word name"
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/30 text-white placeholder-white/50 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            {/* CREATE ROOM */}
             <div className="space-y-3">
               <p className="font-pixel text-sm text-cyan-300">CREATE NEW</p>
               <motion.button
-                onClick={generateRoomId}
+                onClick={handleCreateRoom}
                 disabled={loading}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500/40 to-blue-500/40 text-white border-2 border-cyan-400 font-bold text-sm hover:from-cyan-500/60 hover:to-blue-500/60 transition-all disabled:opacity-50"
+                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500/40 to-blue-500/40 text-white border-2 border-cyan-400 font-bold text-sm disabled:opacity-50"
               >
-                {loading ? "JOINING..." : "GENERATE & JOIN"}
+                {loading ? "CREATING..." : "CREATE ROOM"}
               </motion.button>
-
-              {roomId && (
-                <div className="bg-cyan-500/20 border border-cyan-400/60 rounded-lg p-3 text-center">
-                  <p className="text-xs text-cyan-200">Room ID</p>
-                  <p className="font-pixel text-lg text-cyan-300 font-bold">
-                    {roomId}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* DIVIDER */}
@@ -123,11 +177,12 @@ export default function RoomModal({
               <div className="flex-1 h-px bg-cyan-400/30" />
             </div>
 
-            {/* JOIN */}
+            {/* JOIN ROOM */}
             <div className="space-y-3">
               <p className="font-pixel text-sm text-orange-300">
                 JOIN EXISTING
               </p>
+
               <div className="flex gap-2">
                 <input
                   value={joinRoomId}
@@ -135,18 +190,19 @@ export default function RoomModal({
                     setJoinRoomId(e.target.value);
                     setError("");
                   }}
-                  placeholder="Paste room ID"
+                  placeholder="Enter room ID"
                   disabled={loading}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border-2 border-orange-400/50 text-white placeholder-white/50 focus:outline-none focus:border-orange-400"
                 />
+
                 <motion.button
-                  onClick={handlePasteAndJoin}
+                  onClick={handleJoinRoom}
                   disabled={loading}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500/40 to-red-500/40 text-white border-2 border-orange-400 font-bold"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500/40 to-red-500/40 text-white border-2 border-orange-400 font-bold disabled:opacity-50"
                 >
-                  JOIN
+                  {loading ? "JOINING..." : "JOIN"}
                 </motion.button>
               </div>
             </div>
